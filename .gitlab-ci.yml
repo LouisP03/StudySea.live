@@ -1,0 +1,127 @@
+image: jhipster/jhipster:v7.9.3
+
+variables:
+  IMG: 'java_backend'
+  CI_IMG: '${CI_REGISTRY_IMAGE}/${IMG}'
+  IMG_NODE: 'node_backend'
+  CI_IMG_NODE: '${CI_REGISTRY_IMAGE}/${IMG_NODE}'
+  TP_URL: '${CI_PROJECT_NAMESPACE}.bham.team'
+  TP_CONTACT: '${GITLAB_USER_EMAIL}'
+cache:
+  key: '$CI_COMMIT_REF_NAME'
+  paths:
+    - .maven/
+stages:
+  - check
+  - build
+  - test
+  - analyze
+  - package
+  - release
+  - publish
+  - deploy
+before_script:
+  - export NG_CLI_ANALYTICS="false"
+  - export MAVEN_USER_HOME=`pwd`/.maven
+
+nohttp:
+  stage: check
+  script:
+    - ./mvnw -ntp checkstyle:check -Dmaven.repo.local=$MAVEN_USER_HOME
+
+#node-compile:
+#  image: docker
+#  stage: build
+#  services:
+#    - docker:dind
+#  variables:
+#    DOCKER_HOST: 'tcp://docker:2375'
+#    DOCKER_DRIVER: overlay2
+#    DOCKER_TLS_CERTDIR: ''
+#  script:
+#    - docker info
+#    - echo "building docker container for node backend as ${CI_IMG_NODE}"
+#    - docker build -t ${CI_IMG_NODE} src/main/node/
+
+maven-compile:
+  stage: build
+  script:
+    - ./mvnw -ntp compile -P-webapp -Dmaven.repo.local=$MAVEN_USER_HOME
+  artifacts:
+    paths:
+      - target/classes/
+      - target/generated-sources/
+    expire_in: 1 day
+
+maven-package:
+  stage: package
+  script:
+    - echo "jhipster" | sudo -S apt-get update
+    - echo "jhipster" | sudo -S apt-get install -y chromium-browser
+    - echo `whereis chromium-browser`
+    - ./mvnw -ntp verify -Pprod -DskipTests -Dmaven.repo.local=$MAVEN_USER_HOME
+  artifacts:
+    paths:
+      - target/*.jar
+      - target/classes
+    expire_in: 1 day
+
+publish-docker:
+  stage: publish
+  only:
+    - main
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: 'tcp://docker:2375'
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ''
+  dependencies:
+    - maven-package
+  script:
+    - echo "pushing ${CI_REGISTRY_IMAGE} ${CI_REGISTRY_USER} ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}"
+    - ./mvnw -ntp -e -X jib:build -DskipTests -Pprod -Djib.to.auth.username=${CI_REGISTRY_USER} -Djib.to.auth.password=${CI_REGISTRY_PASSWORD} -Djib.to.image=${CI_IMG}:latest -Dmaven.repo.local=$MAVEN_USER_HOME
+
+publish-docker-node:
+  stage: publish
+  image: docker
+  only:
+    - main
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: 'tcp://docker:2375'
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ''
+  script:
+    - docker info
+    - echo "building docker container for node backend as ${CI_IMG_NODE}"
+    - docker build -t ${CI_IMG_NODE} src/main/node/
+    - echo "pushing node ${CI_REGISTRY_IMAGE} ${CI_REGISTRY_USER} ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}"
+    - docker login -u=${CI_REGISTRY_USER} -p=${CI_REGISTRY_PASSWORD} $CI_REGISTRY
+    - docker push ${CI_IMG_NODE}
+
+# uncomment this once the $RSA $VM_USER@$VM are set in the repo - Setting -> CI/CD -> variables
+# $RSA should be a private key file, $VM_USER is the VM user name (e.g. root or ec2) and $VM is the IP address of the Virtual Machine
+# this assumes docker and SSH is installed on the $VM
+deploy-git:
+  image: alpine:latest
+  stage: deploy
+  when: on_success
+  only:
+    - main
+  before_script:
+    - chmod og= $KEY
+    - apk update && apk add openssh-client
+    - ssh -o StrictHostKeyChecking=no -i $KEY $USER@$VM_IP "docker compose -f ~/team-project-deployment/src/main/docker/app.yml down || true"
+    - ssh -o StrictHostKeyChecking=no -i $KEY $USER@$VM_IP "docker rm -f $(docker ps -a -q) || true"
+    - ssh -o StrictHostKeyChecking=no -i $KEY $USER@$VM_IP "docker volume rm $(docker volume ls -q) || true"
+    - ssh -o StrictHostKeyChecking=no -i $KEY $USER@$VM_IP "rm -rf ~/team-project-deployment || true"
+    - ssh -o StrictHostKeyChecking=no -i $KEY $USER@$VM_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
+    - ssh -o StrictHostKeyChecking=no -i $KEY $USER@$VM_IP "docker pull ${CI_IMG}:latest"
+    - ssh -o StrictHostKeyChecking=no -i $KEY $USER@$VM_IP "docker pull ${CI_IMG_NODE}:latest"
+  script:
+    - scp -o StrictHostKeyChecking=no -i $KEY -r . $USER@$VM_IP:~/team-project-deployment
+    - ssh -o StrictHostKeyChecking=no -i $KEY $USER@$VM_IP "sed -i '5s|teamproject|$CI_IMG:latest|' ~/team-project-deployment/src/main/docker/app.yml"
+    - ssh -o StrictHostKeyChecking=no -i $KEY $USER@$VM_IP "sed -i '16s|teamproject-node|$CI_IMG_NODE:latest|' ~/team-project-deployment/src/main/docker/app.yml"
+    - ssh -o StrictHostKeyChecking=no -i $KEY $USER@$VM_IP "docker compose -f ~/team-project-deployment/src/main/docker/app.yml up -d"

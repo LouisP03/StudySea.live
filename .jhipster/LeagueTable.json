@@ -1,0 +1,28 @@
+{
+  "applications": "*",
+  "changelogDate": "20230419160143",
+  "dto": "no",
+  "embedded": false,
+  "entityTableName": "league_table",
+  "fields": [
+    {
+      "fieldName": "name",
+      "fieldType": "String"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "name": "LeagueTable",
+  "pagination": "no",
+  "readOnly": false,
+  "relationships": [
+    {
+      "otherEntityName": "userExtended",
+      "otherEntityRelationshipName": "leagues",
+      "ownerSide": true,
+      "relationshipName": "members",
+      "relationshipType": "many-to-many"
+    }
+  ],
+  "service": "no"
+}

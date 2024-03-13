@@ -1,0 +1,41 @@
+{
+  "applications": "*",
+  "changelogDate": "20230418175823",
+  "dto": "no",
+  "embedded": false,
+  "entityTableName": "report",
+  "fields": [
+    {
+      "fieldName": "contentType",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "contentID",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "contentAuthor",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "reportedBy",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "reportedTime",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "reportedReason",
+      "fieldType": "byte[]",
+      "fieldTypeBlobContent": "text"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "name": "Report",
+  "pagination": "infinite-scroll",
+  "readOnly": false,
+  "relationships": [],
+  "service": "no"
+}

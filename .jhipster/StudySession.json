@@ -1,0 +1,43 @@
+{
+  "applications": "*",
+  "changelogDate": "20230419160146",
+  "dto": "no",
+  "embedded": false,
+  "entityTableName": "study_session",
+  "fields": [
+    {
+      "fieldName": "actualStart",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "isPrivate",
+      "fieldType": "Boolean"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "name": "StudySession",
+  "pagination": "no",
+  "readOnly": false,
+  "relationships": [
+    {
+      "otherEntityName": "task",
+      "ownerSide": true,
+      "relationshipName": "task",
+      "relationshipType": "one-to-one"
+    },
+    {
+      "otherEntityName": "userExtended",
+      "ownerSide": true,
+      "relationshipName": "owner",
+      "relationshipType": "one-to-one"
+    },
+    {
+      "otherEntityName": "userExtended",
+      "otherEntityRelationshipName": "studySession",
+      "relationshipName": "members",
+      "relationshipType": "one-to-many"
+    }
+  ],
+  "service": "no"
+}

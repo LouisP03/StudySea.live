@@ -1,0 +1,27 @@
+{
+  "applications": "*",
+  "changelogDate": "20230328174509",
+  "dto": "no",
+  "embedded": false,
+  "entityTableName": "friend",
+  "fields": [],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "name": "Friend",
+  "pagination": "no",
+  "readOnly": false,
+  "relationships": [
+    {
+      "otherEntityName": "userExtended",
+      "relationshipName": "friendshipFrom",
+      "relationshipType": "many-to-one"
+    },
+    {
+      "otherEntityName": "userExtended",
+      "otherEntityRelationshipName": "friends",
+      "relationshipName": "friendshipTo",
+      "relationshipType": "many-to-one"
+    }
+  ],
+  "service": "no"
+}

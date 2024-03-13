@@ -1,0 +1,27 @@
+{
+  "applications": "*",
+  "changelogDate": "20230419160145",
+  "dto": "no",
+  "embedded": false,
+  "entityTableName": "after_study",
+  "fields": [
+    {
+      "fieldName": "timeSpent",
+      "fieldType": "Duration"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "name": "AfterStudy",
+  "pagination": "no",
+  "readOnly": false,
+  "relationships": [
+    {
+      "otherEntityName": "task",
+      "ownerSide": true,
+      "relationshipName": "task",
+      "relationshipType": "one-to-one"
+    }
+  ],
+  "service": "no"
+}
